@@ -1,9 +1,11 @@
 import { useState, useCallback } from "react";
 import AnalysisLayout from "@/components/AnalysisLayout";
 import { hairAnalysis } from "@/lib/mockAnalysis";
+import { analyzeImage } from "@/lib/aiAnalysis";
 import { useNavigate } from "react-router-dom";
 import { CheckCircle2, AlertTriangle, TrendingUp } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 
 const HairAnalysis = () => {
   const navigate = useNavigate();
@@ -11,15 +13,22 @@ const HairAnalysis = () => {
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<typeof hairAnalysis | null>(null);
 
-  const handleAnalyze = useCallback((_file: File) => {
+  const handleAnalyze = useCallback(async (file: File) => {
     setIsAnalyzing(true);
-    setProgress(0);
+    setProgress(5);
     const interval = setInterval(() => {
-      setProgress((p) => {
-        if (p >= 100) { clearInterval(interval); setIsAnalyzing(false); setResult(hairAnalysis); return 100; }
-        return p + Math.random() * 15;
-      });
-    }, 300);
+      setProgress((p) => (p < 90 ? p + Math.random() * 8 : p));
+    }, 400);
+    try {
+      const data = await analyzeImage<typeof hairAnalysis>("hair", file);
+      setResult(data);
+      setProgress(100);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Analysis failed");
+    } finally {
+      clearInterval(interval);
+      setIsAnalyzing(false);
+    }
   }, []);
 
   return (

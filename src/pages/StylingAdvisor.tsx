@@ -1,22 +1,31 @@
 import { useState, useCallback } from "react";
 import AnalysisLayout from "@/components/AnalysisLayout";
 import { stylingAnalysis } from "@/lib/mockAnalysis";
+import { analyzeImage } from "@/lib/aiAnalysis";
 import { CheckCircle2, Palette } from "lucide-react";
+import { toast } from "sonner";
 
 const StylingAdvisor = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<typeof stylingAnalysis | null>(null);
 
-  const handleAnalyze = useCallback((_file: File) => {
+  const handleAnalyze = useCallback(async (file: File) => {
     setIsAnalyzing(true);
-    setProgress(0);
+    setProgress(5);
     const interval = setInterval(() => {
-      setProgress((p) => {
-        if (p >= 100) { clearInterval(interval); setIsAnalyzing(false); setResult(stylingAnalysis); return 100; }
-        return p + Math.random() * 15;
-      });
-    }, 300);
+      setProgress((p) => (p < 90 ? p + Math.random() * 8 : p));
+    }, 400);
+    try {
+      const data = await analyzeImage<typeof stylingAnalysis>("styling", file);
+      setResult(data);
+      setProgress(100);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Analysis failed");
+    } finally {
+      clearInterval(interval);
+      setIsAnalyzing(false);
+    }
   }, []);
 
   return (
